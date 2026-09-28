@@ -68,6 +68,21 @@ describe('being sent to a specific board', () => {
     expect(state.activeBoard).toBe(5)
     expect(getLegalBoards(state)).toEqual([5])
   })
+
+  it('grants a free choice when a self-referential move closes the very board it would send to', () => {
+    // Playing cell 0 of board 0 is self-referential (cellIndex === boardIndex),
+    // and this exact move also completes X's top row, closing board 0.
+    // The next player must NOT be forced back into a board that just closed.
+    const almostWon: SmallBoard = {
+      cells: [null, 'x', 'x', 'o', 'o', null, null, null, null],
+      status: 'in_progress',
+    }
+    const state = makeState({ boards: { 0: almostWon }, activeBoard: 0, currentPlayer: 'x' })
+    const next = applyMove(state, 0, 0)
+    expect(next.boards[0].status).toBe('x')
+    expect(next.activeBoard).toBeNull()
+    expect(getLegalBoards(next)).not.toContain(0)
+  })
 })
 
 describe('being sent to a won or full board (free move)', () => {
