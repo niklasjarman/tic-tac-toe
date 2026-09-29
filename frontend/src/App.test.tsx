@@ -1,76 +1,179 @@
-import { render, screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import App from './App'
+import { gameState, withMark } from './test/fixtures'
+import {
+  MOVES_URL,
+  NEW_GAME_URL,
+  moveReturns,
+  networkFailure,
+  newGameReturns,
+  serverError,
+} from './test/handlers'
+import { renderWithQueryClient } from './test/render'
+import { server } from './test/server'
 
-function getCell(boardNumber: number, description: string) {
+function cell(boardNumber: number, description: string) {
   return screen.getByRole('button', { name: `Board ${boardNumber}, ${description} cell` })
 }
 
+const SERVER_ERROR = "Couldn't reach the game server. Please try again."
+
+async function renderLoadedApp() {
+  renderWithQueryClient(<App />)
+  expect(await screen.findByText("X's turn")).toBeInTheDocument()
+}
+
 describe('App', () => {
-  it('shows a populated board with every small board playable at the start', () => {
-    render(<App />)
-    expect(screen.getByRole('status')).toHaveTextContent("X's turn")
+  it('shows a loading state, then a board where every small board is playable', async () => {
+    renderWithQueryClient(<App />)
+    expect(screen.getByText('Loading game…')).toBeInTheDocument()
+    expect(await screen.findByText("X's turn")).toBeInTheDocument()
     for (let boardNumber = 1; boardNumber <= 9; boardNumber++) {
-      expect(getCell(boardNumber, 'top left')).toBeEnabled()
+      expect(cell(boardNumber, 'top left')).toBeEnabled()
     }
   })
 
-  it('places a mark, switches turns, and confines the next move to the forced board', async () => {
+  it('shows an error with a working retry when the game cannot be loaded', async () => {
+    server.use(networkFailure(NEW_GAME_URL))
     const user = userEvent.setup()
-    render(<App />)
+    renderWithQueryClient(<App />)
 
-    // X plays the center cell of board 5 (center), which forces O into board 5.
-    await user.click(getCell(5, 'middle center'))
-    expect(getCell(5, 'middle center')).toHaveTextContent('X')
-    expect(screen.getByRole('status')).toHaveTextContent("O's turn")
+    expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't reach the game server.")
 
-    // Board 5 is now the only legal board; every other board's cells are disabled.
-    expect(getCell(5, 'top left')).toBeEnabled()
-    expect(getCell(1, 'top left')).toBeDisabled()
+    server.resetHandlers()
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(await screen.findByText("X's turn")).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
-  it('does nothing when clicking a cell outside the forced board', async () => {
+  it('sends the move to the backend and renders the state it returns', async () => {
+    const fresh = gameState()
+    const afterMove = gameState({
+      boards: withMark(fresh, 4, 4, 'x'),
+      current_player: 'o',
+      active_board: 4,
+      legal_boards: [4],
+    })
+    let sentBody: unknown
+    server.use(
+      http.post(MOVES_URL, async ({ request }) => {
+        sentBody = await request.json()
+        return HttpResponse.json(afterMove)
+      }),
+    )
     const user = userEvent.setup()
-    render(<App />)
+    await renderLoadedApp()
 
-    await user.click(getCell(5, 'middle center')) // forces next player into board 5
-    const before = screen.getByRole('status').textContent
+    await user.click(cell(5, 'middle center'))
 
-    // Board 1 is disabled, so this click must be a no-op (no mark placed, no turn change).
-    await user.click(getCell(1, 'top left'))
-    expect(getCell(1, 'top left')).toHaveTextContent('')
-    expect(screen.getByRole('status').textContent).toBe(before)
+    expect(await screen.findByText("O's turn")).toBeInTheDocument()
+    expect(cell(5, 'middle center')).toHaveTextContent('X')
+    expect(cell(5, 'top left')).toBeEnabled()
+    expect(cell(1, 'top left')).toBeDisabled()
+    expect(sentBody).toEqual({
+      state: { boards: fresh.boards, current_player: 'x', active_board: null },
+      board_index: 4,
+      cell_index: 4,
+    })
   })
 
-  it('declares a winner and lets New Game reset the board', async () => {
+  it('does nothing when the backend refuses a move as illegal', async () => {
+    let requests = 0
+    server.use(
+      http.post(MOVES_URL, () => {
+        requests += 1
+        return HttpResponse.json(
+          { code: 'wrong_board', detail: 'You must play in the small board you were sent to.' },
+          { status: 409 },
+        )
+      }),
+    )
     const user = userEvent.setup()
-    render(<App />)
+    await renderLoadedApp()
 
-    // Same forced-move trace verified in gameEngine.test.ts: X wins small board 0,
-    // which is not enough to win the whole game, but proves win detection reaches the UI.
-    const moves: [number, string][] = [
-      [1, 'top left'],
-      [1, 'middle left'],
-      [4, 'top center'],
-      [2, 'top left'],
-      [1, 'top center'],
-      [2, 'top right'],
-      [3, 'top right'],
-      [3, 'top left'],
-      [1, 'top right'],
-    ]
-    for (const [board, cell] of moves) {
-      await user.click(getCell(board, cell))
-    }
+    await user.click(cell(1, 'top left'))
 
-    expect(getCell(1, 'top left')).toBeDisabled()
-    expect(getCell(1, 'top center')).toBeDisabled()
-    expect(getCell(1, 'top right')).toBeDisabled()
+    await waitFor(() => expect(requests).toBe(1))
+    await waitFor(() => expect(cell(1, 'top left')).toBeEnabled())
+    expect(cell(1, 'top left')).toHaveTextContent('')
+    expect(screen.getByRole('status')).toHaveTextContent("X's turn")
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows a message instead of breaking when a move request fails', async () => {
+    server.use(networkFailure(MOVES_URL))
+    const user = userEvent.setup()
+    await renderLoadedApp()
+
+    await user.click(cell(1, 'top left'))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(SERVER_ERROR)
+    expect(screen.getByRole('status')).toHaveTextContent("X's turn")
+    expect(cell(1, 'top left')).toBeEnabled()
+  })
+
+  it('shows the result when the backend reports a win, and New Game resets the board', async () => {
+    const fresh = gameState()
+    server.use(
+      moveReturns(
+        gameState({
+          boards: withMark(fresh, 0, 0, 'x'),
+          current_player: 'o',
+          board_statuses: [
+            'x',
+            'x',
+            'x',
+            'in_progress',
+            'in_progress',
+            'in_progress',
+            'in_progress',
+            'in_progress',
+            'in_progress',
+          ],
+          winner: 'x',
+          legal_boards: [],
+        }),
+      ),
+    )
+    const user = userEvent.setup()
+    await renderLoadedApp()
+
+    await user.click(cell(4, 'top left'))
+
+    expect(await screen.findByText('X wins!')).toBeInTheDocument()
+    expect(cell(4, 'top left')).toBeDisabled()
 
     await user.click(screen.getByRole('button', { name: 'New Game' }))
+    expect(await screen.findByText("X's turn")).toBeInTheDocument()
+    expect(cell(4, 'top left')).toBeEnabled()
+  })
+
+  it('shows a message when the backend answers a move with a server error', async () => {
+    server.use(serverError(MOVES_URL))
+    const user = userEvent.setup()
+    await renderLoadedApp()
+
+    await user.click(cell(1, 'top left'))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(SERVER_ERROR)
+    expect(cell(1, 'top left')).toHaveTextContent('')
+  })
+
+  it('keeps the board and shows a message when starting a new game fails', async () => {
+    const user = userEvent.setup()
+    await renderLoadedApp()
+    server.use(serverError(NEW_GAME_URL))
+
+    await user.click(screen.getByRole('button', { name: 'New Game' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(SERVER_ERROR)
     expect(screen.getByRole('status')).toHaveTextContent("X's turn")
-    expect(getCell(1, 'top left')).toBeEnabled()
-    expect(getCell(1, 'top left')).toHaveTextContent('')
+
+    server.use(newGameReturns())
+    await user.click(screen.getByRole('button', { name: 'New Game' }))
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
   })
 })

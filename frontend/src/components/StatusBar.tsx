@@ -1,10 +1,10 @@
-import type { GameState } from '../game/types'
+import type { GameState } from '../api/client'
 
 function describeStatus(state: GameState): string {
   if (state.winner === 'draw') return "It's a draw!"
   if (state.winner === 'x') return 'X wins!'
   if (state.winner === 'o') return 'O wins!'
-  return `${state.currentPlayer.toUpperCase()}'s turn`
+  return `${state.current_player.toUpperCase()}'s turn`
 }
 
 export function StatusBar({ state }: { state: GameState }) {

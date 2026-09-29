@@ -5,6 +5,11 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8000',
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./test_setup.ts'],
@@ -13,6 +18,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
+      exclude: ['src/main.tsx', 'src/api/schema.d.ts', 'src/test/**'],
     },
   },
 })

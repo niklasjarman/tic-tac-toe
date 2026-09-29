@@ -1,4 +1,4 @@
-import type { CellValue } from '../game/types'
+import type { Cell as CellValue } from '../api/client'
 
 interface CellProps {
   value: CellValue
