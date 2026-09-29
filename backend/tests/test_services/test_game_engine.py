@@ -79,6 +79,10 @@ class TestLegalAndIllegalMoves:
         game = make_game(current_player=Player.O)  # empty board, so it must be X's turn
         assert refusal_code(game, 4, 4) is MoveRefusal.INVALID_STATE
 
+    def test_state_with_impossible_mark_counts_is_refused(self) -> None:
+        game = make_game({0: "xx......."}, current_player=Player.O)  # X two ahead of O
+        assert refusal_code(game, 4, 4) is MoveRefusal.INVALID_STATE
+
 
 class TestBeingSentToASpecificBoard:
     def test_played_cell_position_forces_the_next_board(self) -> None:
