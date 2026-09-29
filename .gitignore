@@ -27,3 +27,16 @@ dist-ssr
 coverage
 playwright-report
 test-results
+
+# Python
+.venv
+__pycache__/
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# Environment files (commit .env.example only)
+.env
