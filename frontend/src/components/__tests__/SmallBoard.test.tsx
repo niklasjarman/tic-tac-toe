@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Cell } from '../../api/client'
 import { SmallBoard } from '../SmallBoard'
@@ -47,37 +47,29 @@ describe('SmallBoard', () => {
         onCellClick={vi.fn()}
       />,
     )
+    expect(screen.getByRole('group', { name: 'Small board 1, drawn' })).toBeInTheDocument()
     expect(screen.getByText('Draw')).toBeInTheDocument()
     for (const button of screen.getAllByRole('button')) {
       expect(button).toBeDisabled()
     }
   })
 
-  it('shows a large mark overlay once a player wins the board', () => {
+  it.each([
+    ['x', 'X'],
+    ['o', 'O'],
+  ] as const)('announces and shows a board won by %s', (player, mark) => {
     render(
       <SmallBoard
-        cells={['x', 'x', 'x', null, null, null, null, null, null]}
-        status="x"
+        cells={[player, player, player, null, null, null, null, null, null]}
+        status={player}
         boardIndex={0}
         isLegal={false}
         locked={false}
         onCellClick={vi.fn()}
       />,
     )
-    expect(screen.getByText('X', { selector: 'span.text-6xl' })).toBeInTheDocument()
-  })
-
-  it('shows an O overlay when O wins the board', () => {
-    render(
-      <SmallBoard
-        cells={['o', 'o', 'o', null, null, null, null, null, null]}
-        status="o"
-        boardIndex={0}
-        isLegal={false}
-        locked={false}
-        onCellClick={vi.fn()}
-      />,
-    )
-    expect(screen.getByText('O', { selector: 'span.text-6xl' })).toBeInTheDocument()
+    const board = screen.getByRole('group', { name: `Small board 1, won by ${mark}` })
+    // Three marks in the cells plus the large overlay mark.
+    expect(within(board).getAllByText(mark)).toHaveLength(4)
   })
 })
