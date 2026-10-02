@@ -16,16 +16,29 @@ def test_partially_filled_grid_with_no_line_is_in_progress() -> None:
     )
 
 
-def test_horizontal_line_wins() -> None:
-    assert evaluate_grid(["x", "x", "x", None, "o", "o", None, None, None]) is BoardStatus.X
+ALL_LINES = [
+    pytest.param((0, 1, 2), id="top-row"),
+    pytest.param((3, 4, 5), id="middle-row"),
+    pytest.param((6, 7, 8), id="bottom-row"),
+    pytest.param((0, 3, 6), id="left-column"),
+    pytest.param((1, 4, 7), id="center-column"),
+    pytest.param((2, 5, 8), id="right-column"),
+    pytest.param((0, 4, 8), id="diagonal"),
+    pytest.param((2, 4, 6), id="anti-diagonal"),
+]
 
 
-def test_vertical_line_wins() -> None:
-    assert evaluate_grid(["o", None, None, "o", "x", None, "o", "x", None]) is BoardStatus.O
+@pytest.mark.parametrize("line", ALL_LINES)
+@pytest.mark.parametrize("player", ["x", "o"])
+def test_every_line_wins_for_either_player(line: tuple[int, int, int], player: str) -> None:
+    cells: list[str | None] = [player if i in line else None for i in range(9)]
+    assert evaluate_grid(cells) is BoardStatus(player)
 
 
-def test_diagonal_line_wins() -> None:
-    assert evaluate_grid(["x", "o", None, "o", "x", None, None, None, "x"]) is BoardStatus.X
+def test_a_line_with_mixed_marks_does_not_win() -> None:
+    assert evaluate_grid(["x", "x", "o", None, None, None, None, None, None]) is (
+        BoardStatus.IN_PROGRESS
+    )
 
 
 def test_full_grid_with_no_line_is_a_draw() -> None:

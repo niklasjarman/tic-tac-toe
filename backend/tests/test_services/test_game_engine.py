@@ -1,3 +1,5 @@
+import random
+
 import pytest
 
 from app.core.errors import IllegalMoveError, MoveRefusal
@@ -149,9 +151,38 @@ class TestOverallOutcomes:
         assert game_result(board_statuses(after)) is BoardStatus.DRAW
         assert legal_boards(after) == ()
 
+    def test_winning_move_sends_nobody_anywhere_even_toward_an_open_board(self) -> None:
+        # The final move is cell 8, which would normally send O to open board 8.
+        game = make_game({0: X_WON, 1: X_WON, 2: "x...x....", 4: TWO_O, 5: TWO_O}, active_board=2)
+        after = apply_move(game, 2, 8)
+        assert game_result(board_statuses(after)) is BoardStatus.X
+        assert board_statuses(after)[8] is BoardStatus.IN_PROGRESS
+        assert after.active_board is None
+        assert legal_boards(after) == ()
+
     def test_game_continues_while_boards_remain_open_and_no_line_exists(self) -> None:
         after = apply_move(new_game(), 4, 4)
         assert game_result(board_statuses(after)) is BoardStatus.IN_PROGRESS
+
+
+class TestRandomFullGames:
+    def test_random_games_never_get_stuck_and_always_finish(self) -> None:
+        rng = random.Random(410)  # fixed seed: the same 300 games every run
+        results: set[BoardStatus] = set()
+        for _ in range(300):
+            game = new_game()
+            while game_result(board_statuses(game)) is BoardStatus.IN_PROGRESS:
+                legal = legal_boards(game)
+                assert legal, "a game in progress must always offer a legal board"
+                board = rng.choice(legal)
+                empty = [i for i, cell in enumerate(game.boards[board]) if cell is None]
+                assert empty, "every legal board must have an empty cell"
+                game = apply_move(game, board, rng.choice(empty))
+            results.add(game_result(board_statuses(game)))
+            assert legal_boards(game) == ()
+            assert game.active_board is None
+        # The sample must reach every kind of ending, or it isn't testing all of them.
+        assert results == {BoardStatus.X, BoardStatus.O, BoardStatus.DRAW}
 
 
 class TestLegalBoards:
