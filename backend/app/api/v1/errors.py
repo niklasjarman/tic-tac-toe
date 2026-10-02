@@ -39,3 +39,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
         code = HTTP_ERROR_CODES.get(exc.status_code, "http_error")
         return JSONResponse(status_code=exc.status_code, content=error_body(code, str(exc.detail)))
+
+    @app.exception_handler(Exception)
+    async def unexpected_error(_: Request, __: Exception) -> JSONResponse:
+        # The exception still reaches the server log; the client gets no internals.
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=error_body("internal_error", "Something went wrong on the server."),
+        )
