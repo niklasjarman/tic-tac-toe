@@ -4,218 +4,209 @@
  */
 
 export interface paths {
-  '/api/v1/health': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Health */
-    get: operations['health_api_v1_health_get']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/v1/games': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Create Game */
-    post: operations['create_game_api_v1_games_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/v1/games/moves': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Make Move */
-    post: operations['make_move_api_v1_games_moves_post']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
+    "/api/v1/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health */
+        get: operations["health_api_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/games": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Game */
+        post: operations["create_game_api_v1_games_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/games/moves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make Move */
+        post: operations["make_move_api_v1_games_moves_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>
+export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /**
-     * BoardStatus
-     * @enum {string}
-     */
-    BoardStatus: 'in_progress' | 'x' | 'o' | 'draw'
-    /** ErrorResponse */
-    ErrorResponse: {
-      /** Code */
-      code: string
-      /** Detail */
-      detail: string
-    }
-    /**
-     * GameState
-     * @description The state the client holds and sends back: only what cannot be recomputed.
-     */
-    GameState: {
-      /** Boards */
-      boards: (components['schemas']['Player'] | null)[][]
-      current_player: components['schemas']['Player']
-      /** Active Board */
-      active_board: number | null
-    }
-    /**
-     * GameStateResponse
-     * @description The client-held state plus values derived from it on every request.
-     */
-    GameStateResponse: {
-      /** Boards */
-      boards: (components['schemas']['Player'] | null)[][]
-      current_player: components['schemas']['Player']
-      /** Active Board */
-      active_board: number | null
-      /** Board Statuses */
-      board_statuses: components['schemas']['BoardStatus'][]
-      winner: components['schemas']['Winner'] | null
-      /** Legal Boards */
-      legal_boards: number[]
-    }
-    /** MoveRequest */
-    MoveRequest: {
-      state: components['schemas']['GameState']
-      /** Board Index */
-      board_index: number
-      /** Cell Index */
-      cell_index: number
-    }
-    /**
-     * Player
-     * @enum {string}
-     */
-    Player: 'x' | 'o'
-    /**
-     * Winner
-     * @enum {string}
-     */
-    Winner: 'x' | 'o' | 'draw'
-  }
-  responses: never
-  parameters: never
-  requestBodies: never
-  headers: never
-  pathItems: never
+    schemas: {
+        /**
+         * BoardStatus
+         * @enum {string}
+         */
+        BoardStatus: "in_progress" | "x" | "o" | "draw";
+        /** ErrorResponse */
+        ErrorResponse: {
+            /** Code */
+            code: string;
+            /** Detail */
+            detail: string;
+        };
+        /**
+         * GameState
+         * @description The state the client holds and sends back: only what cannot be recomputed.
+         */
+        GameState: {
+            /** Boards */
+            boards: (components["schemas"]["Player"] | null)[][];
+            current_player: components["schemas"]["Player"];
+            /** Active Board */
+            active_board: number | null;
+        };
+        /**
+         * GameStateResponse
+         * @description The client-held state plus values derived from it on every request.
+         */
+        GameStateResponse: {
+            /** Boards */
+            boards: (components["schemas"]["Player"] | null)[][];
+            current_player: components["schemas"]["Player"];
+            /** Active Board */
+            active_board: number | null;
+            /** Board Statuses */
+            board_statuses: components["schemas"]["BoardStatus"][];
+            winner: components["schemas"]["Winner"] | null;
+            /** Legal Boards */
+            legal_boards: number[];
+        };
+        /** MoveRequest */
+        MoveRequest: {
+            state: components["schemas"]["GameState"];
+            /** Board Index */
+            board_index: number;
+            /** Cell Index */
+            cell_index: number;
+        };
+        /**
+         * Player
+         * @enum {string}
+         */
+        Player: "x" | "o";
+        /**
+         * Winner
+         * @enum {string}
+         */
+        Winner: "x" | "o" | "draw";
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-export type $defs = Record<string, never>
+export type $defs = Record<string, never>;
 export interface operations {
-  health_api_v1_health_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            [key: string]: string
-          }
-        }
-      }
-    }
-  }
-  create_game_api_v1_games_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GameStateResponse']
-        }
-      }
-      /** @description The request failed validation. */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-    }
-  }
-  make_move_api_v1_games_moves_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['MoveRequest']
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['GameStateResponse']
-        }
-      }
-      /** @description The rules refused the move. */
-      409: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-      /** @description The request failed validation. */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-    }
-  }
+    health_api_v1_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    create_game_api_v1_games_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameStateResponse"];
+                };
+            };
+        };
+    };
+    make_move_api_v1_games_moves_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameStateResponse"];
+                };
+            };
+            /** @description The rules refused the move. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
 }
