@@ -19,6 +19,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       exclude: ['src/main.tsx', 'src/api/schema.d.ts', 'src/test/**'],
+      thresholds: { lines: 80, statements: 80, branches: 80, functions: 80 },
     },
   },
 })
