@@ -87,6 +87,24 @@ retry. Cells are disabled while a move is in flight.
 cells during a request stops a fast double-click from sending two moves built
 from the same state.
 
+## Unexpected server errors hide their details
+
+**Chosen:** any unhandled exception returns `500 {"code": "internal_error",
+"detail": "Something went wrong on the server."}`. The exception still
+reaches the server log.
+**Alternative:** include the exception message in `detail`.
+**Why:** every error must use the `{code, detail}` envelope, and internal
+messages can leak implementation details to the client.
+
+## Board results are announced in the board's accessible name
+
+**Chosen:** a closed board's name states its result (`Small board 1, won by
+X`, `Small board 1, drawn`), and the large overlay mark is `aria-hidden`.
+**Alternative:** leave the overlay as readable text inside the board.
+**Why:** a screen reader then hears the result once, clearly, instead of a
+stray "X" among nine cell buttons. It also lets tests find boards by role and
+name, as the spec requires.
+
 ## Same-origin API calls through a proxy
 
 **Chosen:** the Vite dev server (in development) and nginx (in Docker)
